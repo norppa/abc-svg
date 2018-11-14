@@ -1,101 +1,69 @@
-import React, { Component } from "react";
-import "./App.css";
-import Stanza from "./components/Stanza";
+import React, {Component} from "react"
+import "./App.css"
+import Stanza from "./components/Stanza"
+
+import Note from './components/Note'
+import {LINE_HEIGHT, NOTE_SPACING} from './Constants'
+import {parse} from "./logic/Abc"
 
 const noteMap = {
-  C: 0,
-  D: 1,
-  E: 2,
-  F: 3,
-  G: 4,
-  A: 5,
-  B: 6
-};
+  c: 0,
+  d: 1,
+  e: 2,
+  f: 3,
+  g: 4,
+  a: 5,
+  b: 6
+}
 
-const placeholder = "T:example\nK:F\nCDEc"
+const lineHeight = 10
+const noteSpace = 30
+
+const placeholder = "T:example\nK:F\nL:1/4\nc2d1/2ef3"
 
 class App extends Component {
   state = {
-      notes: []
+    notes: []
   }
 
-  componentDidMount = () => {
-      this.setState(this.abcStringToState(placeholder))
+  componentDidMount() {
+    this.setState(parse(placeholder))
   }
 
-  handleChange = (event) =>  this.setState(this.abcStringToState(event.target.value));
+  handleChange = (event) => {
+    const abc = event.target.value
+    this.setState(parse(abc))
+  }
 
+  yCoord = (note) => {
+    const cLine = 93
+    const retval = cLine - noteMap[note.name] * LINE_HEIGHT * 0.5 - note.octave * 3.5 * LINE_HEIGHT
+    console.log("return value of note", note, "is", retval)
+    return retval
+  }
 
-  abcStringToState = abc => {
-    const state = { abc };
-    let noteStr = "";
-    abc.split("\n").forEach(line => {
-      const firstTwo = line.substr(0, 2);
-      if (firstTwo === "T:") {
-        state.title = line.substr(2).trim();
-    } else if (firstTwo === "K:") {
-        state.key = line.substr(2).trim();
-      } else {
-        noteStr += line;
-      }
-    });
-    state.notes = this.noteStringToArray(noteStr);
-    this.setState(state);
-  };
-
-  noteStringToArray = noteStr => {
-    let noteArr = [];
-    let note = null;
-    for (let i = 0; i < noteStr.length; i++) {
-      const c = noteStr.charAt(i).toUpperCase();
-      if ("ABCDEFG".indexOf(c) !== -1) {
-        noteArr = noteArr.concat(note);
-        note = noteMap[c];
-      }
-      if (c !== noteStr.charAt(i)) {
-        note += 7;
-      }
-      if (c === ",") {
-        note -= 7;
-      }
-      if (c === "'") {
-        note += 7;
-      }
-    }
-    noteArr = noteArr.concat(note);
-    noteArr.shift();
-    return noteArr;
-  };
+  generateNotes = () => {
+    return this.state.notes.map((note, i) => {
+      return <Note id={0} x={30 + i * noteSpace} y={100}/>
+    })
+  }
 
   render() {
-    const sizex = 500;
-    const lineHeight = 10;
-    const noteSpace = 30;
-    return (
-      <div className="App">
-        <svg width="500" height="300">
-          <text x={sizex / 2} y="30" textAnchor="middle">
-            {this.state.title}
-          </text>
-          <Stanza
-            signature={this.state.key}
-            lineHeight={lineHeight}
-            width={sizex}
-          />
-          {this.state.notes.map((note, i) => {
-            const x = 35 + i * noteSpace;
-            const y = 30 + 6 * lineHeight - (note * lineHeight) / 2;
-            const r = lineHeight / 2;
-            console.log(x, y, r);
-            return <circle cx={x} cy={y} r={r} fill="black" />;
-          })}
-          <foo />
-        </svg>
+    console.log('rendering', this.state.notes)
+    const sizex = 500
+    return (<div className="App">
+      <Note name="c" octave={0} duration={0.25} clef="g"/>
+      <svg width="500" height="300">
+        <text x={sizex / 2} y="30" textAnchor="middle">
+          {this.state.title}
+        </text>
+        <Stanza signature={this.state.key} middleY={50}/> {this.generateNotes()}
+        <foo/>
+      </svg>
 
-        <textarea onChange={this.handleChange} value={this.state.abc} />
-      </div>
-    );
+      <textarea onChange={this.handleChange} value={this.state.abc}/>
+    </div>)
   }
 }
 
-export default App;
+export default App
